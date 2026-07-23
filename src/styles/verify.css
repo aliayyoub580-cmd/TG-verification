@@ -30,8 +30,8 @@
 }
 
 .verify-logo {
-  width: min(72vw, 260px);
-  max-height: clamp(76px, 13vh, 112px);
+  width: min(78vw, 285px);
+  max-height: clamp(80px, 14vh, 120px);
   object-fit: contain;
 }
 
@@ -234,8 +234,8 @@
   }
 
   .verify-logo {
-    width: min(68vw, 230px);
-    max-height: 82px;
+    width: min(74vw, 250px);
+    max-height: 90px;
   }
 
   .verify-banner {
