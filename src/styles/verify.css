@@ -24,7 +24,7 @@
   display: flex;
   justify-content: center;
   align-items: center;
-  flex: 0 0 clamp(145px, 18vh, 170px);
+  flex: 0 0 clamp(130px, 17vh, 155px);
   min-height: 0;
   padding: 0;
   overflow: hidden;
@@ -32,7 +32,7 @@
 
 .verify-logo {
   flex: none;
-  width: min(122vw, 440px);
+  width: min(102vw, 375px);
   max-width: none;
   max-height: none;
   object-fit: contain;
@@ -233,11 +233,11 @@
   }
 
   .verify-logo-wrap {
-    flex-basis: clamp(112px, 18vh, 130px);
+    flex-basis: clamp(104px, 17vh, 120px);
   }
 
   .verify-logo {
-    width: min(112vw, 400px);
+    width: min(98vw, 350px);
   }
 
   .verify-banner {
