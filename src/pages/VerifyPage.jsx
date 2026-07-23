@@ -1,14 +1,13 @@
 import React, { useEffect, useState } from 'react';
 import { useSearchParams } from 'react-router-dom';
 import { verifyAPI } from '../services/api.js';
-import Spinner from '../components/Spinner.jsx';
 import '../styles/verify.css';
 
 export default function VerifyPage() {
   const [params] = useSearchParams();
   const code = params.get('code');
 
-  const [state, setState] = useState('idle'); // idle | loading | authentic | inactive | not_found | missing_code
+  const [state, setState] = useState('idle'); // idle | loading | authentic | inactive | not_found | missing_code | error
   const [data, setData] = useState(null);
   const [message, setMessage] = useState('');
 
@@ -26,8 +25,9 @@ export default function VerifyPage() {
       })
       .catch((err) => {
         const res = err.response?.data;
-        setState(res?.status || 'not_found');
-        setMessage(res?.message || 'Verification failed. Please try again.');
+        const serverFailure = !err.response || err.response.status >= 500;
+        setState(serverFailure ? 'error' : (res?.status || 'not_found'));
+        setMessage(serverFailure ? 'Verification is temporarily unavailable. Please try again shortly.' : (res?.message || 'Verification failed. Please try again.'));
       });
   }, [code]);
 
@@ -39,6 +39,7 @@ export default function VerifyPage() {
         {state === 'inactive' && <InactiveView code={code} message={message} />}
         {state === 'not_found' && <NotFoundView message={message} />}
         {state === 'missing_code' && <MissingCodeView />}
+        {state === 'error' && <ErrorView message={message} />}
       </div>
     </div>
   );
@@ -172,6 +173,21 @@ function MissingCodeView() {
       <p className="verify-description">
         Please scan a valid QR code printed on your product packaging to verify authenticity.
       </p>
+      <hr className="verify-divider" />
+      <p className="verify-footer">Secured verification · Powered by Indufar</p>
+    </>
+  );
+}
+
+function ErrorView({ message }) {
+  return (
+    <>
+      <div className="verify-logo-wrap"><div className="verify-logo-placeholder">Indufar</div></div>
+      <div className="verify-banner verify-banner--inactive">
+        <div className="verify-warn-circle verify-warn-circle--amber">!</div>
+        <div><p className="verify-status-title">Verification Unavailable</p></div>
+      </div>
+      <p className="verify-description">{message}</p>
       <hr className="verify-divider" />
       <p className="verify-footer">Secured verification · Powered by Indufar</p>
     </>

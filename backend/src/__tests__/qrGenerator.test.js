@@ -10,6 +10,12 @@ describe('buildVerificationUrl', () => {
     const url = buildVerificationUrl('TESTCODE', 'https://example.com/');
     expect(url).toBe('https://example.com/verify?code=TESTCODE');
   });
+
+  test('URL-encodes the imported code without changing it', () => {
+    expect(buildVerificationUrl('Client Code/1', 'https://example.com')).toBe(
+      'https://example.com/verify?code=Client%20Code%2F1'
+    );
+  });
 });
 
 describe('generateQRBuffer', () => {

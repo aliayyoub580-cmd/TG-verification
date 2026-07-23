@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useCallback } from 'react';
 import { authAPI } from '../services/api.js';
 
 export function useAuth() {
@@ -25,7 +25,7 @@ export function useAuth() {
   }, []);
 
   const logout = useCallback(async () => {
-    try { await authAPI.logout(); } catch {}
+    try { await authAPI.logout(); } catch { /* local logout must still complete */ }
     localStorage.removeItem('admin_token');
     localStorage.removeItem('admin_user');
     setUser(null);

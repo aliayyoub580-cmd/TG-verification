@@ -1,9 +1,6 @@
 module.exports = {
   // Code generation
-  DEFAULT_CODE_LENGTH: 10,
   // Characters to use — uppercase, no O/0 or I/1 confusion
-  CODE_CHARSET: 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789',
-  MAX_CODE_RETRIES: 10,
 
   // Batch processing
   DB_INSERT_BATCH_SIZE: 500,
@@ -26,6 +23,7 @@ module.exports = {
   // Supabase Storage buckets
   PRODUCT_IMAGES_BUCKET: 'product-images',
   COMPANY_LOGOS_BUCKET: 'company-logos',
+  QR_CODES_BUCKET: 'qr-codes',
 
   // Verification results
   RESULT_AUTHENTIC: 'authentic',

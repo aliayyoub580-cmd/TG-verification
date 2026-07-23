@@ -65,36 +65,35 @@ export const productsAPI = {
 export const qrAPI = {
   list: (params) => api.get('/api/admin/qr-codes', { params }),
   get: (id) => api.get(`/api/admin/qr-codes/${id}`),
-  create: (data) => api.post('/api/admin/qr-codes', data),
   update: (id, data) => api.put(`/api/admin/qr-codes/${id}`, data),
   delete: (id) => api.delete(`/api/admin/qr-codes/${id}`),
   bulkStatus: (ids, status) => api.patch('/api/admin/qr-codes/bulk-status', { ids, status }),
   bulkDelete: (ids) => api.delete('/api/admin/qr-codes/bulk-delete', { data: { ids } }),
-  generate: (data) => api.post('/api/admin/qr-codes/generate', data),
+  pending: (params) => api.get('/api/admin/qr-codes/pending', { params }),
+  generate: (ids) => api.post('/api/admin/qr-codes/generate', { ids }),
   export: (params) =>
     api.get('/api/admin/qr-codes/export', { params, responseType: 'blob' }),
   downloadTemplate: () =>
     api.get('/api/admin/qr-codes/template', { responseType: 'blob' }),
-  previewImport: (file) => {
+  previewImport: (file, productId) => {
     const fd = new FormData();
     fd.append('file', file);
+    fd.append('productId', productId);
     return api.post('/api/admin/qr-codes/preview-import', fd, {
       headers: { 'Content-Type': 'multipart/form-data' },
     });
   },
-  import: (file, skipDuplicates = true) => {
+  import: (file, productId) => {
     const fd = new FormData();
     fd.append('file', file);
-    fd.append('skipDuplicates', String(skipDuplicates));
+    fd.append('productId', productId);
     return api.post('/api/admin/qr-codes/import', fd, {
       headers: { 'Content-Type': 'multipart/form-data' },
     });
   },
-  downloadZip: (ids, productName, baseUrl) =>
-    api.post('/api/admin/qr-codes/download-zip', { ids, productName, baseUrl }, { responseType: 'blob' }),
-  qrPreview: (id) => api.get(`/api/admin/qr-codes/${id}/qr-preview`),
-  batches: (params) => api.get('/api/admin/qr-codes/generation-batches', { params }),
-  batch: (id) => api.get(`/api/admin/qr-codes/generation-batches/${id}`),
+  history: () => api.get('/api/admin/qr-codes/import-history'),
+  downloadZip: (ids, filters) => api.post('/api/admin/qr-codes/download-zip', { ids, filters }, { responseType: 'blob' }),
+  downloadPNG: (id) => api.get(`/api/admin/qr-codes/${id}/download`, { responseType: 'blob' }),
 };
 
 /* ── Scans ─────────────────────────────────────────────────────────────────── */

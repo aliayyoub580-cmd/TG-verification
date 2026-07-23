@@ -10,12 +10,12 @@ async function generateQRBuffer(url) {
   return QRCode.toBuffer(url, {
     type: 'png',
     width: 512,
-    margin: 2,
+    margin: 4,
     color: {
       dark: '#000000',
       light: '#ffffff',
     },
-    errorCorrectionLevel: 'M',
+    errorCorrectionLevel: 'H',
   });
 }
 
@@ -42,7 +42,7 @@ async function generateQRDataURL(url) {
  */
 function buildVerificationUrl(code, baseUrl) {
   const cleanBase = baseUrl.replace(/\/$/, '');
-  return `${cleanBase}/verify?code=${code}`;
+  return `${cleanBase}/verify?code=${encodeURIComponent(code)}`;
 }
 
 module.exports = { generateQRBuffer, generateQRDataURL, buildVerificationUrl };

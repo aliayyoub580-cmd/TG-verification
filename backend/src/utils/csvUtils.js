@@ -85,7 +85,11 @@ function parseCSVBuffer(buffer, requiredColumns = []) {
  */
 function normalizeCode(code) {
   if (typeof code !== 'string') return '';
-  return code.trim().toUpperCase();
+  return code.trim();
 }
 
-module.exports = { objectsToCSV, parseCSVBuffer, normalizeCode };
+function codeLookupKey(code) {
+  return normalizeCode(code).toUpperCase();
+}
+
+module.exports = { objectsToCSV, parseCSVBuffer, normalizeCode, codeLookupKey };

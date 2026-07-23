@@ -1,266 +1,87 @@
 const { supabaseAdmin } = require('../config/supabase');
-const { generateUniqueBatch } = require('../utils/codeGenerator');
-const { buildVerificationUrl } = require('../utils/qrGenerator');
-const { v4: uuidv4 } = require('uuid');
-const {
-  DB_INSERT_BATCH_SIZE,
-  DEFAULT_CODE_LENGTH,
-  STATUS_ACTIVE,
-  BATCH_STATUS_PENDING,
-  BATCH_STATUS_PROCESSING,
-  BATCH_STATUS_COMPLETED,
-  BATCH_STATUS_FAILED,
-  BATCH_STATUS_PARTIAL,
-} = require('../config/constants');
+const { generateQRBuffer, buildVerificationUrl } = require('../utils/qrGenerator');
+const { QR_CODES_BUCKET } = require('../config/constants');
+const { getPagination } = require('../utils/pagination');
 
-/**
- * Generates QR codes in bulk and inserts them into the database in safe batches.
- *
- * This runs fully server-side. For very large quantities (10,000+) it uses
- * chunked inserts to avoid blocking and provides progress tracking via the
- * generation_batches table.
- *
- * @param {object} options
- * @param {string} options.productId
- * @param {number} options.quantity
- * @param {number} options.codeLength
- * @param {string} options.prefix
- * @param {string} options.status
- * @param {string} options.baseUrl
- * @param {string} options.adminId
- * @returns {Promise<object>} batch summary
- */
-async function generateQRCodes({
-  productId,
-  quantity,
-  codeLength = DEFAULT_CODE_LENGTH,
-  prefix = '',
-  status = STATUS_ACTIVE,
-  baseUrl,
-  adminId,
-}) {
-  if (quantity < 1 || quantity > 50000) {
-    throw Object.assign(
-      new Error('Quantity must be between 1 and 50,000'),
-      { statusCode: 400 }
-    );
-  }
-
-  // 1. Create a generation batch record (marks start of job)
-  const batchId = uuidv4();
-  const { error: batchError } = await supabaseAdmin
-    .from('generation_batches')
-    .insert({
-      id: batchId,
-      product_id: productId,
-      requested_quantity: quantity,
-      generated_quantity: 0,
-      failed_quantity: 0,
-      status: BATCH_STATUS_PROCESSING,
-      base_url: baseUrl,
-      created_by: adminId || null,
-    });
-
-  if (batchError) {
-    throw new Error(`Failed to create batch record: ${batchError.message}`);
-  }
-
-  let generatedCount = 0;
-  let failedCount = 0;
-  const allCodes = [];
-
-  try {
-    // 2. Load existing codes that match the prefix pattern to avoid conflicts
-    //    We load only the codes (not full records) for memory efficiency
-    const existingCodesSet = await loadExistingCodesSet(prefix, codeLength);
-
-    // 3. Generate all codes up front (in-memory — crypto.randomBytes is fast)
-    const codes = generateUniqueBatch(quantity, codeLength, prefix, existingCodesSet);
-
-    // 4. Insert in batches to avoid DB timeouts
-    const chunks = chunkArray(codes, DB_INSERT_BATCH_SIZE);
-
-    for (const chunk of chunks) {
-      const rows = chunk.map((code) => ({
-        code,
-        product_id: productId,
-        status,
-        generation_batch_id: batchId,
-      }));
-
-      const { data: inserted, error: insertError } = await supabaseAdmin
-        .from('qr_codes')
-        .insert(rows)
-        .select('code');
-
-      if (insertError) {
-        // Handle duplicate key violations gracefully
-        if (insertError.code === '23505') {
-          // Unique constraint violation — some codes already exist
-          // Try inserting individually to maximise successful inserts
-          const { savedCount, lostCount } = await insertWithRetry(rows, productId, status, batchId);
-          generatedCount += savedCount;
-          failedCount += lostCount;
-        } else {
-          console.error('Batch insert error:', insertError.message);
-          failedCount += chunk.length;
-        }
-      } else {
-        generatedCount += inserted.length;
-        allCodes.push(...(inserted.map((r) => r.code)));
-      }
-    }
-
-    // Also collect codes from successful chunk inserts (already added above)
-    // Merge with allCodes — deduplicate
-    codes.slice(0, generatedCount).forEach((c) => {
-      if (!allCodes.includes(c)) allCodes.push(c);
-    });
-
-    const finalStatus =
-      generatedCount === quantity
-        ? BATCH_STATUS_COMPLETED
-        : generatedCount > 0
-        ? BATCH_STATUS_PARTIAL
-        : BATCH_STATUS_FAILED;
-
-    // 5. Update batch record
-    await supabaseAdmin
-      .from('generation_batches')
-      .update({
-        generated_quantity: generatedCount,
-        failed_quantity: failedCount,
-        status: finalStatus,
-        completed_at: new Date().toISOString(),
-      })
-      .eq('id', batchId);
-
-    return {
-      batchId,
-      productId,
-      requestedQuantity: quantity,
-      generatedQuantity: generatedCount,
-      failedQuantity: failedCount,
-      status: finalStatus,
-      baseUrl,
-    };
-  } catch (err) {
-    // Mark batch as failed
-    await supabaseAdmin
-      .from('generation_batches')
-      .update({
-        generated_quantity: generatedCount,
-        failed_quantity: quantity - generatedCount,
-        status: generatedCount > 0 ? BATCH_STATUS_PARTIAL : BATCH_STATUS_FAILED,
-        completed_at: new Date().toISOString(),
-      })
-      .eq('id', batchId);
-
-    throw err;
-  }
+function publicBaseUrl() {
+  const value = process.env.PUBLIC_VERIFICATION_BASE_URL;
+  if (!value || /localhost/i.test(value)) throw Object.assign(new Error('PUBLIC_VERIFICATION_BASE_URL must be configured with the production HTTPS URL'), { statusCode: 503 });
+  return value.replace(/\/$/, '');
 }
+function safeFileName(code) { return code.replace(/[^a-zA-Z0-9._-]/g, '_').slice(0, 80) || 'code'; }
 
-/**
- * Loads all existing codes from the database into a Set for O(1) lookups.
- * For very large tables we fetch in pages.
- */
-async function loadExistingCodesSet(prefix, codeLength) {
-  const set = new Set();
-  const pageSize = 10000;
-  let from = 0;
-
-  // Only load codes that could conflict (same length, same prefix)
-  // This keeps memory usage reasonable
-  while (true) {
-    let q = supabaseAdmin
-      .from('qr_codes')
-      .select('code')
-      .range(from, from + pageSize - 1);
-
-    if (prefix) {
-      q = q.ilike('code', `${prefix}%`);
-    }
-
-    const { data, error } = await q;
-
-    if (error || !data || data.length === 0) break;
-
-    data.forEach((row) => set.add(row.code));
-
-    if (data.length < pageSize) break;
-    from += pageSize;
-  }
-
-  return set;
-}
-
-/**
- * Inserts rows one at a time when a batch has a duplicate key conflict.
- * This maximises successful inserts while counting individual failures.
- */
-async function insertWithRetry(rows, productId, status, batchId) {
-  let savedCount = 0;
-  let lostCount = 0;
-
-  for (const row of rows) {
-    const { error } = await supabaseAdmin
-      .from('qr_codes')
-      .insert(row);
-
-    if (error) {
-      lostCount++;
-    } else {
-      savedCount++;
-    }
-  }
-
-  return { savedCount, lostCount };
-}
-
-/**
- * Retrieves generation batch details along with a sample of generated codes.
- */
-async function getBatchDetails(batchId) {
-  const { data: batch, error } = await supabaseAdmin
-    .from('generation_batches')
-    .select(`
-      *,
-      products ( id, name )
-    `)
-    .eq('id', batchId)
-    .single();
-
-  if (error || !batch) {
-    throw Object.assign(new Error('Batch not found'), { statusCode: 404 });
-  }
-
-  return batch;
-}
-
-async function listBatches(query = {}) {
-  const { getPagination } = require('../utils/pagination');
+async function listPendingCodes(query = {}) {
   const { page, limit, offset } = getPagination(query);
-
-  const { data, count, error } = await supabaseAdmin
-    .from('generation_batches')
-    .select(`
-      *,
-      products ( id, name )
-    `, { count: 'exact' })
-    .order('created_at', { ascending: false })
-    .range(offset, offset + limit - 1);
-
-  if (error) throw new Error(`Failed to list batches: ${error.message}`);
-
+  let q = supabaseAdmin.from('qr_codes').select('id, code, status, imported_at, product_id, products(name)', { count: 'exact' })
+    .eq('qr_generated', false).order('imported_at', { ascending: false });
+  if (query.all !== 'true') q = q.range(offset, offset + limit - 1);
+  else q = q.limit(20000);
+  if (query.search) q = q.ilike('code', `%${query.search.trim()}%`);
+  if (query.product_id) q = q.eq('product_id', query.product_id);
+  if (query.date_from) q = q.gte('imported_at', `${query.date_from}T00:00:00.000Z`);
+  if (query.date_to) q = q.lte('imported_at', `${query.date_to}T23:59:59.999Z`);
+  const { data, count, error } = await q;
+  if (error) throw new Error(`Failed to list pending codes: ${error.message}`);
   return { data: data || [], total: count || 0, page, limit };
 }
 
-function chunkArray(arr, size) {
-  const chunks = [];
-  for (let i = 0; i < arr.length; i += size) {
-    chunks.push(arr.slice(i, i + size));
+async function generateForIds(ids) {
+  const uniqueIds = [...new Set(ids)];
+  const generated = [], existing = [], failed = [];
+  for (const id of uniqueIds) {
+    try {
+      const result = await generateOne(id);
+      (result.alreadyGenerated ? existing : generated).push(result.record);
+    } catch (error) { failed.push({ id, message: generationErrorMessage(error) }); }
   }
-  return chunks;
+  return { generated: generated.length, alreadyGenerated: existing.length, failed: failed.length, records: generated, errors: failed };
 }
 
-module.exports = { generateQRCodes, getBatchDetails, listBatches };
+function generationErrorMessage(error) {
+  const message = error?.message || '';
+  if (/PUBLIC_VERIFICATION_BASE_URL/i.test(message)) {
+    return 'PUBLIC_VERIFICATION_BASE_URL is not configured with the live HTTPS site URL.';
+  }
+  if (/bucket|storage|upload/i.test(message)) {
+    return 'QR image storage is not configured. Run database migration 005 and verify the qr-codes bucket.';
+  }
+  if (/qr_generated|qr_generation_state|qr_image_/i.test(message)) {
+    return 'The QR workflow database migration is missing. Run database migration 005.';
+  }
+  if (error?.statusCode === 409) return message;
+  return 'QR generation failed. Check the backend deployment logs and configuration.';
+}
+
+async function generateOne(id) {
+  const { data: current, error: readError } = await supabaseAdmin.from('qr_codes')
+    .select('id, code, product_id, qr_generated, qr_image_url, qr_generation_state').eq('id', id).single();
+  if (readError || !current) throw Object.assign(new Error('Verification code not found'), { statusCode: 404 });
+  if (current.qr_generated) return { alreadyGenerated: true, record: current };
+
+  const { data: claimed, error: claimError } = await supabaseAdmin.from('qr_codes')
+    .update({ qr_generation_state: 'processing' }).eq('id', id).eq('qr_generated', false).eq('qr_generation_state', 'pending').select('id').maybeSingle();
+  if (claimError) throw new Error(`Could not claim code for generation: ${claimError.message}`);
+  if (!claimed) throw Object.assign(new Error('QR generation is already in progress for this code'), { statusCode: 409 });
+
+  const baseUrl = publicBaseUrl();
+  const verificationUrl = buildVerificationUrl(current.code, baseUrl);
+  const path = `${current.product_id}/${current.id}-${safeFileName(current.code)}.png`;
+  try {
+    const png = await generateQRBuffer(verificationUrl);
+    if (!Buffer.isBuffer(png) || png.length < 100) throw new Error('PNG generation returned invalid data');
+    const { error: uploadError } = await supabaseAdmin.storage.from(QR_CODES_BUCKET).upload(path, png, { contentType: 'image/png', upsert: false });
+    if (uploadError && !/already exists|duplicate/i.test(uploadError.message)) throw new Error(`QR image upload failed: ${uploadError.message}`);
+    const { data: urlData } = supabaseAdmin.storage.from(QR_CODES_BUCKET).getPublicUrl(path);
+    if (!urlData?.publicUrl) throw new Error('QR image URL was not created');
+    const now = new Date().toISOString();
+    const { data, error } = await supabaseAdmin.from('qr_codes').update({ qr_generated: true, qr_generation_state: 'generated',
+      qr_image_path: path, qr_image_url: urlData.publicUrl, qr_generated_at: now, updated_at: now }).eq('id', id).select('id, code, qr_image_url, qr_generated_at').single();
+    if (error) throw new Error(`Could not save generated QR metadata: ${error.message}`);
+    return { alreadyGenerated: false, record: { ...data, verificationUrl } };
+  } catch (error) {
+    await supabaseAdmin.from('qr_codes').update({ qr_generation_state: 'pending' }).eq('id', id).eq('qr_generated', false);
+    throw error;
+  }
+}
+
+module.exports = { listPendingCodes, generateForIds, generateOne, publicBaseUrl, safeFileName, generationErrorMessage };

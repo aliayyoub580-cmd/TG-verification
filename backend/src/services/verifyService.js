@@ -6,7 +6,7 @@ const {
   RESULT_MISSING_CODE,
   STATUS_ACTIVE,
 } = require('../config/constants');
-const { normalizeCode } = require('../utils/csvUtils');
+const { normalizeCode, codeLookupKey } = require('../utils/csvUtils');
 
 /**
  * Verifies a submitted QR code and returns structured result.
@@ -38,6 +38,7 @@ async function verifyCode(rawCode, meta = {}) {
   }
 
   const code = normalizeCode(rawCode);
+  const lookupKey = codeLookupKey(code);
 
   // Basic character/length validation — reject obviously malformed codes early
   if (code.length < 4 || code.length > 64) {
@@ -81,7 +82,7 @@ async function verifyCode(rawCode, meta = {}) {
         status
       )
     `)
-    .eq('code', code)
+    .eq('code_normalized', lookupKey)
     .maybeSingle();
 
   if (qrError) {
@@ -89,7 +90,7 @@ async function verifyCode(rawCode, meta = {}) {
     // Don't expose DB errors — treat as not found
     return {
       success: false,
-      status: RESULT_NOT_FOUND,
+      status: 'error',
       message: 'Verification temporarily unavailable. Please try again shortly.',
     };
   }
@@ -113,7 +114,7 @@ async function verifyCode(rawCode, meta = {}) {
   }
 
   // --- Inactive ---
-  if (qrRecord.status !== STATUS_ACTIVE) {
+  if (qrRecord.status !== STATUS_ACTIVE || !qrRecord.products || qrRecord.products.status !== STATUS_ACTIVE) {
     await recordScan({
       qrCodeId: qrRecord.id,
       submittedCode: code,

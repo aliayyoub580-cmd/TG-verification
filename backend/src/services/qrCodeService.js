@@ -1,14 +1,14 @@
 const { supabaseAdmin } = require('../config/supabase');
 const { getPagination } = require('../utils/pagination');
-const { normalizeCode } = require('../utils/csvUtils');
+const { normalizeCode, codeLookupKey } = require('../utils/csvUtils');
 const { STATUS_ACTIVE, STATUS_INACTIVE } = require('../config/constants');
 
 async function listQRCodes(query = {}) {
   const { page, limit, offset } = getPagination(query);
-  const { search, status, product_id, sort_by = 'created_at', sort_order = 'desc' } = query;
+  const { search, status, product_id, sort_by = 'qr_generated_at', sort_order = 'desc', generated = 'true' } = query;
 
-  const validSortColumns = ['created_at', 'scan_count', 'code', 'status', 'last_scanned_at'];
-  const sortCol = validSortColumns.includes(sort_by) ? sort_by : 'created_at';
+  const validSortColumns = ['created_at', 'imported_at', 'qr_generated_at', 'scan_count', 'code', 'status', 'last_scanned_at'];
+  const sortCol = validSortColumns.includes(sort_by) ? sort_by : 'qr_generated_at';
   const ascending = sort_order === 'asc';
 
   let q = supabaseAdmin
@@ -22,6 +22,11 @@ async function listQRCodes(query = {}) {
       last_scanned_at,
       created_at,
       updated_at,
+      imported_at,
+      qr_generated,
+      qr_generated_at,
+      qr_image_url,
+      qr_image_path,
       generation_batch_id,
       product_id,
       products ( id, name, medicine_name )
@@ -40,6 +45,11 @@ async function listQRCodes(query = {}) {
   if (product_id) {
     q = q.eq('product_id', product_id);
   }
+
+  if (generated === 'true') q = q.eq('qr_generated', true);
+  if (generated === 'false') q = q.eq('qr_generated', false);
+  if (query.date_from) q = q.gte('qr_generated_at', `${query.date_from}T00:00:00.000Z`);
+  if (query.date_to) q = q.lte('qr_generated_at', `${query.date_to}T23:59:59.999Z`);
 
   const { data, count, error } = await q;
 
@@ -67,6 +77,7 @@ async function getQRCodeById(id) {
 
 async function createQRCode(body) {
   const code = normalizeCode(body.code);
+  const codeNormalized = codeLookupKey(code);
 
   if (!code) {
     throw Object.assign(new Error('Code is required'), { statusCode: 400 });
@@ -76,7 +87,7 @@ async function createQRCode(body) {
   const { data: existing } = await supabaseAdmin
     .from('qr_codes')
     .select('id')
-    .eq('code', code)
+    .eq('code_normalized', codeNormalized)
     .maybeSingle();
 
   if (existing) {
@@ -87,6 +98,7 @@ async function createQRCode(body) {
     .from('qr_codes')
     .insert({
       code,
+      code_normalized: codeNormalized,
       product_id: body.product_id,
       status: body.status || STATUS_ACTIVE,
     })

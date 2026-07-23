@@ -182,12 +182,18 @@ describe('GET /api/verify', () => {
     // Even though code is lowercase, the service normalizes it
     await request(app).get('/api/verify?code=7gg6y89u8k');
     // The eq() call should have received the uppercased version
-    expect(qrChain.eq).toHaveBeenCalledWith('code', '7GG6Y89U8K');
+    expect(qrChain.eq).toHaveBeenCalledWith('code_normalized', '7GG6Y89U8K');
   });
 
   test('health endpoint returns 200', async () => {
     const res = await request(app).get('/api/health');
     expect(res.status).toBe(200);
     expect(res.body.success).toBe(true);
+  });
+
+  test('pending-code admin endpoint rejects unauthenticated requests', async () => {
+    const res = await request(app).get('/api/admin/qr-codes/pending');
+    expect(res.status).toBe(401);
+    expect(res.body.success).toBe(false);
   });
 });

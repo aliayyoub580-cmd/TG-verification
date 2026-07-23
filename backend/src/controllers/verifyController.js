@@ -15,6 +15,7 @@ async function verify(req, res, next) {
     // HTTP status: 200 for found (even inactive), 404 for not found
     const statusCode =
       result.status === 'authentic' || result.status === 'inactive' ? 200 :
+      result.status === 'error' ? 503 :
       result.status === 'not_found' ? 404 : 400;
 
     res.status(statusCode).json(result);
