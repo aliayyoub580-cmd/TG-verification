@@ -31,7 +31,7 @@
 /* Logo */
 .verify-logo {
   display: block;
-  width: clamp(320px, 68vw, 680px);
+  width: clamp(220px, 34vw, 340px);
   height: auto;
   max-width: 100%;
   object-fit: contain;
@@ -40,7 +40,7 @@
 /* Tablets */
 @media (max-width: 768px) {
   .verify-logo {
-    width: clamp(300px, 84vw, 600px);
+    width: clamp(200px, 42vw, 300px);
   }
 }
 
@@ -51,7 +51,7 @@
   }
 
   .verify-logo {
-    width: clamp(300px, 92vw, 460px);
+    width: clamp(170px, 46vw, 230px);
   }
 }
 
