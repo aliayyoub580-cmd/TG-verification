@@ -1,0 +1,205 @@
+/* ── Verify page ──────────────────────────────────────────────────────────── */
+.verify-page {
+  min-height: 100vh;
+  background: #ffffff;
+  display: flex;
+  justify-content: center;
+  padding: 0 0 40px;
+}
+
+.verify-container {
+  width: 100%;
+  max-width: 420px;
+  padding: 0 20px;
+}
+
+/* ── Logo ─────────────────────────────────────────────────────────────────── */
+.verify-logo-wrap {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  padding: 40px 0 16px;
+  min-height: 100px;
+}
+
+.verify-logo {
+  max-width: 180px;
+  max-height: 80px;
+  object-fit: contain;
+}
+
+.verify-logo-placeholder {
+  font-size: 28px;
+  font-weight: 800;
+  color: #16a34a;
+  letter-spacing: -0.5px;
+}
+
+/* ── Product meta ─────────────────────────────────────────────────────────── */
+.verify-product-name {
+  font-size: 20px;
+  font-weight: 700;
+  color: #111827;
+  margin-bottom: 4px;
+}
+
+.verify-medicine-name {
+  font-size: 14px;
+  color: #6b7280;
+  margin-bottom: 16px;
+}
+
+/* ── Status banner ────────────────────────────────────────────────────────── */
+.verify-banner {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  border-radius: 12px;
+  padding: 20px 20px;
+  margin: 16px 0;
+}
+
+.verify-banner--authentic {
+  background: #f0fdf4;
+  border: 1.5px solid #bbf7d0;
+}
+
+.verify-banner--inactive {
+  background: #fffbeb;
+  border: 1.5px solid #fde68a;
+}
+
+.verify-banner--notfound {
+  background: #fef2f2;
+  border: 1.5px solid #fecaca;
+}
+
+/* ── Check circle ─────────────────────────────────────────────────────────── */
+.verify-check-circle {
+  flex-shrink: 0;
+  width: 48px;
+  height: 48px;
+  border-radius: 50%;
+  background: #16a34a;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: white;
+}
+
+.verify-check-circle svg {
+  width: 24px;
+  height: 24px;
+}
+
+.verify-warn-circle {
+  flex-shrink: 0;
+  width: 48px;
+  height: 48px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 22px;
+  font-weight: 700;
+  color: white;
+}
+
+.verify-warn-circle--amber { background: #d97706; }
+.verify-warn-circle--red   { background: #dc2626; }
+
+.verify-status-title {
+  font-size: 18px;
+  font-weight: 700;
+  color: #111827;
+  line-height: 1.2;
+}
+
+.verify-code-display {
+  font-size: 13px;
+  color: #6b7280;
+  font-family: 'Courier New', monospace;
+  margin-top: 4px;
+  letter-spacing: 1px;
+}
+
+/* ── Product image ────────────────────────────────────────────────────────── */
+.verify-product-image-wrap {
+  display: flex;
+  justify-content: center;
+  padding: 20px 0;
+}
+
+.verify-product-image {
+  max-width: 260px;
+  max-height: 260px;
+  object-fit: contain;
+  border-radius: 12px;
+}
+
+/* ── Description & footer ─────────────────────────────────────────────────── */
+.verify-description {
+  font-size: 14px;
+  color: #374151;
+  text-align: center;
+  line-height: 1.6;
+  padding: 8px 0;
+}
+
+.verify-divider {
+  border: none;
+  border-top: 1px solid #e5e7eb;
+  margin: 20px 0 12px;
+}
+
+.verify-footer {
+  font-size: 12px;
+  color: #9ca3af;
+  text-align: center;
+}
+
+/* ── Skeleton ─────────────────────────────────────────────────────────────── */
+@keyframes shimmer {
+  0%   { background-position: -400px 0; }
+  100% { background-position: 400px 0; }
+}
+
+.skeleton-base {
+  background: linear-gradient(90deg, #f3f4f6 25%, #e5e7eb 50%, #f3f4f6 75%);
+  background-size: 800px 100%;
+  animation: shimmer 1.4s infinite;
+  border-radius: 8px;
+}
+
+.verify-skeleton { padding-top: 40px; }
+
+.skeleton-logo {
+  width: 160px; height: 60px; margin: 0 auto 24px;
+  background: linear-gradient(90deg, #f3f4f6 25%, #e5e7eb 50%, #f3f4f6 75%);
+  background-size: 800px 100%;
+  animation: shimmer 1.4s infinite;
+  border-radius: 8px;
+}
+
+.skeleton-banner {
+  height: 88px; border-radius: 12px; margin-bottom: 20px;
+  background: linear-gradient(90deg, #f3f4f6 25%, #e5e7eb 50%, #f3f4f6 75%);
+  background-size: 800px 100%;
+  animation: shimmer 1.4s infinite;
+}
+
+.skeleton-image {
+  width: 220px; height: 220px; border-radius: 12px; margin: 0 auto 20px;
+  background: linear-gradient(90deg, #f3f4f6 25%, #e5e7eb 50%, #f3f4f6 75%);
+  background-size: 800px 100%;
+  animation: shimmer 1.4s infinite;
+}
+
+.skeleton-text {
+  height: 16px; border-radius: 4px; margin-bottom: 10px;
+  background: linear-gradient(90deg, #f3f4f6 25%, #e5e7eb 50%, #f3f4f6 75%);
+  background-size: 800px 100%;
+  animation: shimmer 1.4s infinite;
+}
+
+.skeleton-text--short { width: 60%; margin: 0 auto; }
