@@ -1,20 +1,22 @@
 /* ── Verify page ──────────────────────────────────────────────────────────── */
 .verify-page {
-  min-height: 100vh;
+  height: 100vh;
+  height: 100dvh;
   background: #ffffff;
   display: flex;
   justify-content: center;
-  padding: 0;
+  overflow: hidden;
   font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
 }
 
 .verify-container {
   width: 100%;
   max-width: 420px;
-  padding: 0 20px;
-  min-height: 100vh;
+  height: 100%;
+  padding: clamp(8px, 1.8vh, 16px) clamp(14px, 5vw, 20px);
   display: flex;
   flex-direction: column;
+  overflow: hidden;
 }
 
 /* ── Logo ─────────────────────────────────────────────────────────────────── */
@@ -22,13 +24,14 @@
   display: flex;
   justify-content: center;
   align-items: center;
-  padding: 40px 0 16px;
-  min-height: 100px;
+  flex: 0 1 clamp(82px, 15vh, 126px);
+  min-height: 72px;
+  padding: 0;
 }
 
 .verify-logo {
-  max-width: 180px;
-  max-height: 80px;
+  width: min(72vw, 260px);
+  max-height: clamp(76px, 13vh, 112px);
   object-fit: contain;
 }
 
@@ -41,26 +44,26 @@
 
 /* ── Product meta ─────────────────────────────────────────────────────────── */
 .verify-product-name {
-  font-size: 20px;
+  font-size: clamp(17px, 2.8vh, 20px);
   font-weight: 700;
   color: #111827;
-  margin-bottom: 4px;
+  margin-bottom: 2px;
 }
 
 .verify-medicine-name {
   font-size: 14px;
   color: #6b7280;
-  margin-bottom: 16px;
+  margin-bottom: clamp(4px, 1vh, 10px);
 }
 
 /* ── Status banner ────────────────────────────────────────────────────────── */
 .verify-banner {
   display: flex;
   align-items: center;
-  gap: 16px;
+  gap: 12px;
   border-radius: 12px;
-  padding: 20px 20px;
-  margin: 16px 0;
+  padding: clamp(10px, 2vh, 16px);
+  margin: clamp(6px, 1.4vh, 12px) 0;
 }
 
 .verify-banner--authentic {
@@ -81,8 +84,8 @@
 /* ── Check circle ─────────────────────────────────────────────────────────── */
 .verify-check-circle {
   flex-shrink: 0;
-  width: 48px;
-  height: 48px;
+  width: clamp(40px, 7vh, 48px);
+  height: clamp(40px, 7vh, 48px);
   border-radius: 50%;
   background: #16a34a;
   display: flex;
@@ -98,8 +101,8 @@
 
 .verify-warn-circle {
   flex-shrink: 0;
-  width: 48px;
-  height: 48px;
+  width: clamp(40px, 7vh, 48px);
+  height: clamp(40px, 7vh, 48px);
   border-radius: 50%;
   display: flex;
   align-items: center;
@@ -131,36 +134,44 @@
 .verify-product-image-wrap {
   display: flex;
   justify-content: center;
-  padding: 20px 0;
+  align-items: center;
+  flex: 1 1 auto;
+  min-height: 0;
+  padding: clamp(4px, 1vh, 10px) 0;
 }
 
 .verify-product-image {
-  max-width: 260px;
-  max-height: 260px;
+  width: auto;
+  height: 100%;
+  max-width: min(76vw, 280px);
+  max-height: min(100%, 280px);
   object-fit: contain;
   border-radius: 12px;
 }
 
 /* ── Description & footer ─────────────────────────────────────────────────── */
 .verify-description {
-  font-size: 14px;
+  flex: 0 0 auto;
+  font-size: clamp(12px, 1.9vh, 14px);
   color: #374151;
   text-align: center;
-  line-height: 1.6;
-  padding: 8px 0;
+  line-height: 1.4;
+  padding: clamp(3px, 0.8vh, 7px) 0;
 }
 
 .verify-divider {
+  flex: 0 0 auto;
   border: none;
   border-top: 1px solid #e5e7eb;
-  margin: auto 0 0;
+  margin: clamp(4px, 1vh, 9px) 0 0;
 }
 
 .verify-footer {
+  flex: 0 0 auto;
   font-size: 12px;
   color: #9ca3af;
   text-align: center;
-  padding: 18px 0 24px;
+  padding: clamp(6px, 1.4vh, 12px) 0 0;
 }
 
 /* ── Skeleton ─────────────────────────────────────────────────────────────── */
@@ -176,7 +187,11 @@
   border-radius: 8px;
 }
 
-.verify-skeleton { padding-top: 40px; }
+.verify-skeleton {
+  height: 100%;
+  padding-top: clamp(8px, 2vh, 18px);
+  overflow: hidden;
+}
 
 .skeleton-logo {
   width: 160px; height: 60px; margin: 0 auto 24px;
@@ -194,7 +209,7 @@
 }
 
 .skeleton-image {
-  width: 220px; height: 220px; border-radius: 12px; margin: 0 auto 20px;
+  width: min(58vw, 220px); height: min(30vh, 220px); border-radius: 12px; margin: 0 auto 20px;
   background: linear-gradient(90deg, #f3f4f6 25%, #e5e7eb 50%, #f3f4f6 75%);
   background-size: 800px 100%;
   animation: shimmer 1.4s infinite;
@@ -208,3 +223,31 @@
 }
 
 .skeleton-text--short { width: 60%; margin: 0 auto; }
+
+@media (max-width: 360px), (max-height: 640px) {
+  .verify-container {
+    padding-inline: 12px;
+  }
+
+  .verify-logo-wrap {
+    flex-basis: clamp(70px, 13vh, 88px);
+  }
+
+  .verify-logo {
+    width: min(68vw, 230px);
+    max-height: 82px;
+  }
+
+  .verify-banner {
+    border-radius: 10px;
+    padding: 9px 11px;
+  }
+
+  .verify-status-title {
+    font-size: 16px;
+  }
+
+  .verify-code-display {
+    font-size: 11px;
+  }
+}
