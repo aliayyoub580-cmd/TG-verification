@@ -24,14 +24,17 @@
   display: flex;
   justify-content: center;
   align-items: center;
-  flex: 0 1 clamp(82px, 15vh, 126px);
-  min-height: 72px;
+  flex: 0 0 clamp(145px, 18vh, 170px);
+  min-height: 0;
   padding: 0;
+  overflow: hidden;
 }
 
 .verify-logo {
-  width: min(88vw, 320px);
-  max-height: clamp(88px, 15vh, 132px);
+  flex: none;
+  width: min(122vw, 440px);
+  max-width: none;
+  max-height: none;
   object-fit: contain;
 }
 
@@ -230,12 +233,11 @@
   }
 
   .verify-logo-wrap {
-    flex-basis: clamp(70px, 13vh, 88px);
+    flex-basis: clamp(112px, 18vh, 130px);
   }
 
   .verify-logo {
-    width: min(84vw, 280px);
-    max-height: 100px;
+    width: min(112vw, 400px);
   }
 
   .verify-banner {
