@@ -61,7 +61,7 @@ function LoadingSkeleton() {
 /* ── Authentic ─────────────────────────────────────────────────────────────── */
 function AuthenticView({ data, code }) {
   const product = data?.product || {};
-  const logoUrl = product.logoUrl || '/imgi_1_logo.png';
+  const logoUrl = '/logo.png';
   const productImageUrl = product.imageUrl || '/T.G.%2020mg.png';
   const useFallback = (fallback) => (event) => {
     if (!event.currentTarget.src.endsWith(fallback)) event.currentTarget.src = fallback;
@@ -70,7 +70,7 @@ function AuthenticView({ data, code }) {
     <>
       {/* Logo */}
       <div className="verify-logo-wrap">
-        <img src={logoUrl} onError={useFallback('/imgi_1_logo.png')} alt={product.companyName || 'Indufar logo'} className="verify-logo" />
+        <img src={logoUrl} alt={product.companyName || 'Indufar logo'} className="verify-logo" />
       </div>
 
       {/* Product name */}
