@@ -19,45 +19,39 @@
   overflow: hidden;
 }
 
-/* ---------- Logo Wrapper ---------- */
+/* Logo Wrapper */
 .verify-logo-wrap {
   display: flex;
   justify-content: center;
   align-items: center;
-  flex: 0 0 clamp(110px, 20vh, 170px);
+  flex: 0 0 clamp(120px, 18vh, 170px);
   padding: 8px 0;
-  overflow: hidden;
 }
 
-/* ---------- Logo ---------- */
+/* Logo */
 .verify-logo {
   display: block;
-  width: clamp(180px, 70vw, 340px);
-  max-width: 100%;
-  max-height: 100%;
+  width: clamp(220px, 34vw, 340px);
   height: auto;
+  max-width: 100%;
   object-fit: contain;
 }
 
-/* ---------- Tablet ---------- */
+/* Tablets */
 @media (max-width: 768px) {
-  .verify-logo-wrap {
-    flex-basis: clamp(100px, 18vh, 145px);
-  }
-
   .verify-logo {
-    width: clamp(170px, 72vw, 300px);
+    width: clamp(200px, 42vw, 300px);
   }
 }
 
-/* ---------- Small Phones ---------- */
+/* Mobile */
 @media (max-width: 480px) {
   .verify-logo-wrap {
-    flex-basis: clamp(90px, 16vh, 125px);
+    flex-basis: clamp(115px, 17vh, 145px);
   }
 
   .verify-logo {
-    width: clamp(160px, 75vw, 270px);
+    width: clamp(170px, 46vw, 230px);
   }
 }
 
