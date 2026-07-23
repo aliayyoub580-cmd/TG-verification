@@ -61,15 +61,16 @@ function LoadingSkeleton() {
 /* ── Authentic ─────────────────────────────────────────────────────────────── */
 function AuthenticView({ data, code }) {
   const product = data?.product || {};
+  const logoUrl = product.logoUrl || '/imgi_1_logo.png';
+  const productImageUrl = product.imageUrl || '/T.G.%2020mg.png';
+  const useFallback = (fallback) => (event) => {
+    if (!event.currentTarget.src.endsWith(fallback)) event.currentTarget.src = fallback;
+  };
   return (
     <>
       {/* Logo */}
       <div className="verify-logo-wrap">
-        {product.logoUrl ? (
-          <img src={product.logoUrl} alt={product.companyName || 'Company logo'} className="verify-logo" />
-        ) : (
-          <div className="verify-logo-placeholder">{product.companyName || 'Indufar'}</div>
-        )}
+        <img src={logoUrl} onError={useFallback('/imgi_1_logo.png')} alt={product.companyName || 'Indufar logo'} className="verify-logo" />
       </div>
 
       {/* Product name */}
@@ -92,11 +93,9 @@ function AuthenticView({ data, code }) {
       </div>
 
       {/* Product image */}
-      {product.imageUrl && (
-        <div className="verify-product-image-wrap">
-          <img src={product.imageUrl} alt={product.name} className="verify-product-image" />
-        </div>
-      )}
+      <div className="verify-product-image-wrap">
+        <img src={productImageUrl} onError={useFallback('/T.G.%2020mg.png')} alt={product.name || 'T.G. 15 mg'} className="verify-product-image" />
+      </div>
 
       {/* Description */}
       <p className="verify-description">
