@@ -10,6 +10,7 @@ const NAV = [
   { to: '/admin/generate',      label: 'Generate',     icon: '⚡' },
   { to: '/admin/import-export', label: 'Import/Export',icon: '📁' },
   { to: '/admin/scans',         label: 'Scan History', icon: '📋' },
+  { to: '/admin/news',          label: 'News',         icon: '📰' },
 ];
 
 export default function AdminLayout() {

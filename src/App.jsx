@@ -16,6 +16,7 @@ import QRCodesPage from './pages/admin/QRCodesPage.jsx';
 import GeneratePage from './pages/admin/GeneratePage.jsx';
 import ImportExportPage from './pages/admin/ImportExportPage.jsx';
 import ScansPage from './pages/admin/ScansPage.jsx';
+import NewsPage from './pages/admin/NewsPage.jsx';
 
 // Auth guard
 import RequireAdmin from './components/RequireAdmin.jsx';
@@ -53,6 +54,7 @@ export default function App() {
           <Route path="generate" element={<GeneratePage />} />
           <Route path="import-export" element={<ImportExportPage />} />
           <Route path="scans" element={<ScansPage />} />
+          <Route path="news" element={<NewsPage />} />
         </Route>
 
         {/* Catch-all */}

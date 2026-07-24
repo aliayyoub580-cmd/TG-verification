@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
-import { dashboardAPI } from '../../services/api.js';
+import { dashboardAPI, newsAPI } from '../../services/api.js';
 import StatCard from '../../components/StatCard.jsx';
 import Badge from '../../components/Badge.jsx';
 import Spinner from '../../components/Spinner.jsx';
@@ -9,12 +9,19 @@ import { fmtDate } from '../../utils/download.js';
 export default function DashboardPage() {
   const [stats, setStats] = useState(null);
   const [loading, setLoading] = useState(true);
+  const [recentNews, setRecentNews] = useState([]);
 
   useEffect(() => {
     dashboardAPI.stats()
       .then(({ data }) => setStats(data.data))
       .catch(() => {})
       .finally(() => setLoading(false));
+  }, []);
+
+  useEffect(() => {
+    newsAPI.list({ sort: 'newest' })
+      .then(({ data }) => setRecentNews((data.data || []).slice(0, 3)))
+      .catch(() => {});
   }, []);
 
   if (loading) return (
@@ -148,6 +155,27 @@ export default function DashboardPage() {
             )}
           </div>
         </div>
+      </div>
+
+      <div className="card recent-news-card">
+        <div className="card-header">
+          <span className="card-title">Recent News</span>
+          <Link to="/admin/news" className="btn btn--sm btn-ghost">View all →</Link>
+        </div>
+        {recentNews.length ? <div className="recent-news-list">
+          {recentNews.map((item) => (
+            <a key={item.id} className="recent-news-item" href={item.article_url}
+              target="_blank" rel="noopener noreferrer">
+              {item.image_url
+                ? <img src={item.image_url} alt="" className="recent-news-item__image" />
+                : <span className="recent-news-item__image recent-news-item__placeholder">📰</span>}
+              <span className="recent-news-item__body">
+                <strong>{item.title}</strong>
+                <small>{item.news_site || 'Spaceflight News'} · {fmtDate(item.published_at)}</small>
+              </span>
+            </a>
+          ))}
+        </div> : <p className="recent-news-empty">No news has been fetched yet</p>}
       </div>
     </div>
   );

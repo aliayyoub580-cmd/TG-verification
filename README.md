@@ -325,3 +325,10 @@ The admin panel requires checking a confirmation box before generating codes.
 ---
 
 *Secured verification · Powered by Indufar*
+# News Automation
+
+The admin News page stores the latest ten Spaceflight News API articles in Supabase.
+Apply `backend/database/migrations/006_news.sql`, then set the server-only
+`CRON_SECRET` environment variable in Vercel. The configured Vercel Cron invokes
+`GET /api/cron/news` daily at `5 0 * * *` (12:05 AM UTC) and sends
+`Authorization: Bearer <CRON_SECRET>`. Admins can also refresh from `/admin/news`.

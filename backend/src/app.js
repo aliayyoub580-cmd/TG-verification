@@ -10,6 +10,8 @@ const authRouter = require('./routes/auth');
 const productsRouter = require('./routes/products');
 const qrCodesRouter = require('./routes/qrCodes');
 const scansRouter = require('./routes/scans');
+const newsRouter = require('./routes/news');
+const cronRouter = require('./routes/cron');
 const { errorHandler } = require('./middleware/errorHandler');
 
 const app = express();
@@ -71,6 +73,8 @@ app.use('/api/admin/auth', authRouter);
 app.use('/api/admin/products', productsRouter);
 app.use('/api/admin/qr-codes', qrCodesRouter);
 app.use('/api/admin/scans', scansRouter);
+app.use('/api/admin/news', newsRouter);
+app.use('/api/cron', cronRouter);
 
 // ─── 404 handler ─────────────────────────────────────────────────────────────
 app.use((req, res) => {

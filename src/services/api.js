@@ -103,3 +103,10 @@ export const scansAPI = {
   export: (params) =>
     api.get('/api/admin/scans/export', { params, responseType: 'blob' }),
 };
+
+export const newsAPI = {
+  list: (params) => api.get('/api/admin/news', { params }),
+  get: (id) => api.get(`/api/admin/news/${id}`),
+  refresh: () => api.post('/api/admin/news/refresh'),
+  delete: (id) => api.delete(`/api/admin/news/${id}`),
+};
