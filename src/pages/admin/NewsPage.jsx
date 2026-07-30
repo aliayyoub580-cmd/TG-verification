@@ -35,6 +35,14 @@ export default function NewsPage() {
   const [deleteTarget, setDeleteTarget] = useState(null);
   const [refreshing, setRefreshing] = useState(false);
   const [deleting, setDeleting] = useState(false);
+
+  // Auto-fetch test schedule configuration state
+  const [autoFetchInterval, setAutoFetchInterval] = useState(() => {
+    return localStorage.getItem('news_auto_fetch_interval') || 'daily';
+  });
+  const [secondsLeft, setSecondsLeft] = useState(null);
+  const [showConfigModal, setShowConfigModal] = useState(false);
+
   const debouncedSearch = useDebounce(search, 350);
 
   const load = useCallback(async () => {
@@ -63,16 +71,70 @@ export default function NewsPage() {
     return dates.length ? fmtDate(dates.sort().at(-1)) : 'Not yet';
   }, [articles]);
 
-  async function handleRefresh() {
+  const handleRefresh = useCallback(async (opts = {}) => {
     setRefreshing(true);
     try {
       const { data } = await newsAPI.refresh();
-      toast.success(data.message || 'News refreshed');
+      if (opts.isAuto) {
+        toast.success('⚡ Auto-fetch timer triggered: News refreshed automatically!');
+      } else {
+        toast.success(data.message || 'News refreshed successfully');
+      }
       setConfirmRefresh(false);
       await load();
     } catch (err) {
       toast.error(err.response?.data?.message || 'News refresh failed');
-    } finally { setRefreshing(false); }
+    } finally {
+      setRefreshing(false);
+    }
+  }, [load]);
+
+  // Interval countdown effect for automatic testing
+  useEffect(() => {
+    if (autoFetchInterval === 'off') {
+      setSecondsLeft(null);
+      return;
+    }
+
+    const intervalSecs = {
+      '1min': 60,
+      '5min': 300,
+      '15min': 900,
+      '1hour': 3600,
+      'daily': 86400,
+    }[autoFetchInterval] || 60;
+
+    setSecondsLeft(intervalSecs);
+
+    const timer = setInterval(() => {
+      setSecondsLeft((prev) => {
+        if (prev === null || prev <= 1) {
+          handleRefresh({ isAuto: true });
+          return intervalSecs;
+        }
+        return prev - 1;
+      });
+    }, 1000);
+
+    return () => clearInterval(timer);
+  }, [autoFetchInterval, handleRefresh]);
+
+  function handleSaveInterval(mode) {
+    setAutoFetchInterval(mode);
+    localStorage.setItem('news_auto_fetch_interval', mode);
+    toast.success(`Auto-fetch schedule updated: ${mode}`);
+  }
+
+  function formatSeconds(secs) {
+    if (secs === null) return 'Paused';
+    if (secs >= 3600) {
+      const h = Math.floor(secs / 3600);
+      const m = Math.floor((secs % 3600) / 60);
+      return `${h}h ${m}m`;
+    }
+    const m = Math.floor(secs / 60);
+    const s = secs % 60;
+    return `${m.toString().padStart(2, '0')}:${s.toString().padStart(2, '0')}`;
   }
 
   async function handleDelete() {
@@ -89,10 +151,17 @@ export default function NewsPage() {
 
   return <div className="news-page">
     <div className="page-header">
-      <div><h1 className="page-title">News</h1>
-        <p className="page-subtitle">Manage the latest automatically fetched news articles.</p></div>
-      <div className="page-actions">
-        <Button onClick={() => setConfirmRefresh(true)} loading={refreshing}>↻ Refresh News</Button>
+      <div>
+        <h1 className="page-title">News</h1>
+        <p className="page-subtitle">Manage and test automatically fetched daily news articles.</p>
+      </div>
+      <div className="page-actions" style={{ display: 'flex', gap: '8px', flexWrap: 'wrap' }}>
+        <Button variant="secondary" onClick={() => setShowConfigModal(true)}>
+          ⚙️ Auto-Fetch Schedule ({autoFetchInterval === 'daily' ? 'Daily' : autoFetchInterval === 'off' ? 'Paused' : autoFetchInterval})
+        </Button>
+        <Button onClick={() => setConfirmRefresh(true)} loading={refreshing}>
+          ↻ Refresh News Now
+        </Button>
       </div>
     </div>
 
@@ -100,7 +169,19 @@ export default function NewsPage() {
       <StatCard label="Total News" value={total} icon="📰" color="green" />
       <StatCard label="Last Updated" value={lastUpdated} icon="◷" color="blue" />
       <StatCard label="News Source" value="Spaceflight News" icon="◎" color="amber" />
-      <StatCard label="Next Scheduled Refresh" value={nextRefresh()} icon="↻" color="green" sub="12:05 AM UTC" />
+      <StatCard
+        label="Auto-Fetch Schedule"
+        value={
+          autoFetchInterval === 'off'
+            ? 'Paused'
+            : autoFetchInterval === 'daily'
+            ? nextRefresh()
+            : `Next in ${formatSeconds(secondsLeft)}`
+        }
+        icon="⏱️"
+        color={autoFetchInterval === 'off' ? 'amber' : 'green'}
+        sub={autoFetchInterval !== 'off' && autoFetchInterval !== 'daily' ? `Mode: Every ${autoFetchInterval}` : '12:05 AM UTC Daily'}
+      />
     </div>
 
     <div className="filter-bar">
@@ -147,7 +228,7 @@ export default function NewsPage() {
 
     <ConfirmModal open={confirmRefresh} title="Refresh News"
       message="Fetch and replace the current news with the latest articles?"
-      onConfirm={handleRefresh} onCancel={() => setConfirmRefresh(false)} loading={refreshing} />
+      onConfirm={() => handleRefresh()} onCancel={() => setConfirmRefresh(false)} loading={refreshing} />
     <ConfirmModal open={Boolean(deleteTarget)} title="Delete News Article" danger
       message={`Delete “${deleteTarget?.title || ''}”? This cannot be undone.`}
       onConfirm={handleDelete} onCancel={() => setDeleteTarget(null)} loading={deleting} />
@@ -163,5 +244,81 @@ export default function NewsPage() {
           <dt>Fetched</dt><dd>{fmtDate(detail.fetched_at)}</dd></dl>
       </div>}
     </Modal>
+
+    {/* Auto-Fetch Schedule & Test Configuration Modal */}
+    <Modal
+      open={showConfigModal}
+      title="⏱️ Configure News Auto-Fetch Schedule"
+      onClose={() => setShowConfigModal(false)}
+      footer={
+        <div style={{ display: 'flex', justifyContent: 'space-between', width: '100%', alignItems: 'center', flexWrap: 'wrap', gap: '10px' }}>
+          <Button
+            variant="secondary"
+            onClick={() => {
+              setShowConfigModal(false);
+              handleRefresh({ isAuto: true });
+            }}
+            loading={refreshing}
+          >
+            ⚡ Run Auto-Fetch Test Now
+          </Button>
+          <Button variant="primary" onClick={() => setShowConfigModal(false)}>
+            Save & Close
+          </Button>
+        </div>
+      }
+    >
+      <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
+        <p style={{ color: 'var(--gray-600)', fontSize: '14px', lineHeight: '1.5', margin: 0 }}>
+          Configure the automatic news fetching frequency. Choose a fast interval (1 min or 5 min) to test and verify automatic news replacement in real-time.
+        </p>
+
+        <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
+          {[
+            { id: '1min', label: '⚡ Every 1 Minute (Rapid Test Mode)', desc: 'Automatically triggers news fetch & replacement every 60 seconds.' },
+            { id: '5min', label: '⚡ Every 5 Minutes (Fast Test Mode)', desc: 'Automatically triggers news fetch & replacement every 5 minutes.' },
+            { id: '15min', label: '⏱️ Every 15 Minutes', desc: 'Triggers news fetch & replacement every 15 minutes.' },
+            { id: '1hour', label: '⏱️ Every 1 Hour', desc: 'Triggers news fetch & replacement every hour.' },
+            { id: 'daily', label: '📅 Daily (Default - 12:05 AM UTC)', desc: 'Standard daily production schedule.' },
+            { id: 'off', label: '⏸️ Paused / Off', desc: 'Disables automatic test timer.' },
+          ].map((opt) => (
+            <label
+              key={opt.id}
+              style={{
+                display: 'flex',
+                alignItems: 'flex-start',
+                gap: '12px',
+                padding: '12px 14px',
+                borderRadius: '8px',
+                border: autoFetchInterval === opt.id ? '2px solid var(--green-600)' : '1px solid var(--gray-200)',
+                background: autoFetchInterval === opt.id ? 'var(--green-50, #f0fdf4)' : '#fff',
+                cursor: 'pointer',
+                transition: 'all 0.15s ease',
+              }}
+            >
+              <input
+                type="radio"
+                name="autoFetchInterval"
+                value={opt.id}
+                checked={autoFetchInterval === opt.id}
+                onChange={() => handleSaveInterval(opt.id)}
+                style={{ marginTop: '3px' }}
+              />
+              <div>
+                <strong style={{ display: 'block', fontSize: '14px', color: 'var(--gray-900)' }}>{opt.label}</strong>
+                <span style={{ fontSize: '12px', color: 'var(--gray-500)' }}>{opt.desc}</span>
+              </div>
+            </label>
+          ))}
+        </div>
+
+        {autoFetchInterval !== 'off' && autoFetchInterval !== 'daily' && (
+          <div style={{ padding: '12px', background: '#eff6ff', border: '1px solid #bfdbfe', borderRadius: '6px', fontSize: '13px', color: '#1e40af' }}>
+            ⏱️ <strong>Active Test Countdown:</strong> Next automatic fetch in <strong>{formatSeconds(secondsLeft)}</strong>.
+          </div>
+        )}
+      </div>
+    </Modal>
   </div>;
 }
+
